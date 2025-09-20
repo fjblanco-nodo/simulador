@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simulador Crédito Hipotecario — Nodo Cero</title>
+<style>
+  :root{
+    --bg:#0e5054;
+    --card:#0b3f42;
+    --ink:#eaf3ef;
+    --muted:#b7c8c3;
+    --btn-dark:#2c2c2c;
+    --accent-strong:#6ec1ad;
+  }
+  body{
+    margin:0; font-family:"Segoe UI", Roboto, sans-serif;
+    background:var(--bg); color:var(--ink);
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; overflow-x:hidden;
+  }
+
+  .banner{
+    width:100%;
+    background:#000; 
+    color:#fff;
+    padding:14px 10px;
+    text-align:center;
+  }
+  .banner img{
+    max-height:70px;   /* logo más grande */
+    display:block;
+    margin:0 auto 6px auto;
+  }
+  .banner h1{margin:0; font-size:22px; font-weight:bold; color:#fff;}
+  .banner #fechaActual{margin-top:4px; font-size:13px; color:#ddd;}
+
+  .wrap{
+    width:100%; max-width:900px;
+    margin:auto; 
+    padding:20px 14px;
+  }
+  
+  .card{
+    background:var(--card); border:1px solid rgba(255,255,255,.08);
+    border-radius:14px; padding:14px; margin-bottom:14px; text-align:left
+  }
+
+  /* Grid de 2 columnas solo para el formulario */
+  .form-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:16px;
+  }
+  @media(max-width:768px){
+    .form-grid{grid-template-columns:1fr;}
+  }
+
+  label{
+    display:block; font-size:13px; color:var(--muted);
+    margin:6px 0 4px;
+  }
+  input, select{
+    width:100%; box-sizing:border-box;
+    border:1px solid rgba(255,255,255,.14); background:#083538;
+    color:var(--ink); padding:10px; border-radius:8px; font-size:14px;
+  }
+  .req::after{content:" *"; color:var(--accent-strong)}
+
+  .actions{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+  .btn{cursor:pointer; border:none; font-weight:600; padding:10px 14px; border-radius:8px; font-size:14px;}
+  .btn.primary{background:var(--btn-dark); color:var(--ink);}
+  .btn.secondary{background:#0f5c60; color:var(--ink);}
+
+  table{width:100%; border-collapse:collapse; margin-top:10px}
+  thead th{background:#0a4246; color:var(--ink); font-weight:600; padding:10px; text-align:center; font-size:13px}
+  tbody td{padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:center; font-size:13px}
+  .kpi{display:flex; gap:10px; flex-wrap:wrap; margin-top:6px}
+  .kpi .box{flex:1 1 150px; background:#0a4448; border-radius:10px; padding:10px}
+  .box .t{color:var(--muted); font-size:11px; margin-bottom:3px}
+  .box .v{font-size:16px; font-weight:700}
+  footer{margin-top:8px; font-size:11px; color:#b4cbc5; text-align:center}
+  #textoLegal{font-size:11px; color:var(--muted); margin-top:12px; line-height:1.4; text-align:justify}
+</style>
+</head>
+<body>
+  <!-- Banner negro -->
+  <div class="banner">
+    <img id="logoSim" src="Logo1.jpg" alt="Nodo Cero" />
+    <h1>Simulador de Crédito Hipotecario</h1>
+    <div id="fechaActual"></div>
+  </div>
+
+  <div class="wrap">
+    <form id="formSim" class="card" novalidate>
+      <div class="form-grid">
+        <div>
+          <label class="req" for="nombre">Nombre</label>
+          <input id="nombre" required />
+        </div>
+        <div>
+          <label class="req" for="apellido">Apellido</label>
+          <input id="apellido" required />
+        </div>
+        <div>
+          <label class="req" for="email">E-mail</label>
+          <input id="email" type="email" required />
+        </div>
+        <div>
+          <label class="req" for="montoUF">Monto crédito (UF)</label>
+          <input id="montoUF" required />
+        </div>
+        <div>
+          <label class="req" for="porcProp">Porcentaje propiedad (%)</label>
+          <input id="porcProp" type="number" min="1" max="100" required />
+        </div>
+        <div>
+          <label class="req" for="plazo">Plazo (años)</label>
+          <select id="plazo" required>
+            <option value="" disabled selected>Seleccionar…</option>
+            <option>10</option><option>15</option><option>20</option>
+            <option>25</option><option>30</option><option>35</option><option>40</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn primary">Calcular Dividendo</button>
+        <button type="button" class="btn secondary" id="btnLimpiar">Limpiar</button>
+      </div>
+    </form>
+
+    <section id="resultado" class="card" style="display:none">
+      <h2>Resultado simulación</h2>
+      <div id="resResumen" class="kpi"></div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Escenario</th>
+            <th>Tasa anual</th>
+            <th>Dividendo base</th>
+            <th>Seguros</th>
+            <th>Dividendo final</th>
+          </tr>
+        </thead>
+        <tbody id="resTabla"></tbody>
+      </table>
+
+      <footer><em>Valores referenciales</em></footer>
+      <div id="textoLegal">
+        La información contenida en esta simulación es de carácter meramente referencial y no constituye en ningún caso una oferta, compromiso ni garantía por parte de Nodo Cero SpA. Su único propósito es orientar a los clientes en la estimación preliminar de las condiciones de un crédito hipotecario, las cuales podrán variar según evaluación y políticas vigentes de las instituciones que lo otorguen.
+      </div>
+    </section>
+  </div>
+
+<script>
+  const TASA_MENSUAL_DESGRAVAMEN = 0.00030;
+  const TASA_MENSUAL_INCENDIO_SISMO = 0.00015;
+
+  const parseUF = v => Number(String(v).replace(/\./g,'').replace(',', '.').trim());
+  const fmtUF0 = n => isFinite(n) ? `UF ${n.toLocaleString('es-CL',{maximumFractionDigits:0})}` : '—';
+  const fmtUF1 = n => isFinite(n) ? `UF ${n.toLocaleString('es-CL',{minimumFractionDigits:1, maximumFractionDigits:1})}` : '—';
+
+  function dividendoMensual(montoUF, tasaAnual, plazoAnios){
+    const r = tasaAnual / 12;
+    const n = plazoAnios * 12;
+    if (r === 0) return montoUF / n;
+    return montoUF * r / (1 - Math.pow(1 + r, -n));
+  }
+  function calcSeguros(montoUF, valorPropUF){
+    return montoUF * TASA_MENSUAL_DESGRAVAMEN + valorPropUF * TASA_MENSUAL_INCENDIO_SISMO;
+  }
+
+  const form = document.getElementById('formSim');
+  const btnLimpiar = document.getElementById('btnLimpiar');
+  const out = {
+    panel: document.getElementById('resultado'),
+    tabla: document.getElementById('resTabla'),
+    resumen: document.getElementById('resResumen'),
+  };
+
+  let ultimaSimulacion = null;
+
+  // Fecha en pantalla
+  document.getElementById("fechaActual").innerText =
+    "Fecha: " + new Date().toLocaleString("es-CL");
+
+  btnLimpiar.addEventListener('click', () => {
+    form.reset();
+    out.panel.style.display = 'none';
+    ultimaSimulacion = null;
+  });
+
+  form.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const nombre = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const email  = document.getElementById('email').value.trim();
+    const montoUF = parseUF(document.getElementById('montoUF').value);
+    const porcProp = parseUF(document.getElementById('porcProp').value);
+    const plazo = parseInt(document.getElementById('plazo').value,10);
+
+    if(!nombre || !apellido || !email || !isFinite(montoUF) || !isFinite(porcProp) || !plazo){
+      alert("Completa todos los campos obligatorios correctamente.");
+      return;
+    }
+    if(porcProp < 1 || porcProp > 100){
+      alert("Revisa el porcentaje ingresado");
+      return;
+    }
+
+    const valorPropUF = montoUF / (porcProp/100);
+    const segurosMes = calcSeguros(montoUF, valorPropUF);
+
+    const escenarios = [
+      { nombre:"Escenario A", tasa:0.045 },
+      { nombre:"Escenario B", tasa:0.050 },
+      { nombre:"Escenario C", tasa:0.055 },
+    ];
+
+    out.tabla.innerHTML = '';
+    const filas = [];
+    ultimaSimulacion = {nombre,apellido,email,montoUF,valorPropUF,plazo,segurosMes, escenarios:[]};
+
+    for (const e of escenarios){
+      const base = dividendoMensual(montoUF, e.tasa, plazo);
+      const total = base + segurosMes;
+      ultimaSimulacion.escenarios.push({esc:e.nombre,tasa:e.tasa,base,total,seguros:segurosMes});
+      filas.push(`
+        <tr>
+          <td>${e.nombre}</td>
+          <td>${(e.tasa*100).toFixed(1)}%</td>
+          <td>${fmtUF1(base)}</td>
+          <td>${fmtUF1(segurosMes)}</td>
+          <td><strong>${fmtUF1(total)}</strong></td>
+        </tr>
+      `);
+    }
+    out.tabla.innerHTML = filas.join('');
+
+    out.resumen.innerHTML = `
+      <div class="box"><div class="t">Solicitante</div><div class="v">${nombre} ${apellido}</div></div>
+      <div class="box"><div class="t">Deuda solicitada</div><div class="v">${fmtUF0(montoUF)}</div></div>
+      <div class="box"><div class="t">Valor propiedad</div><div class="v">${fmtUF0(valorPropUF)}</div></div>
+      <div class="box"><div class="t">Plazo</div><div class="v">${plazo} años</div></div>
+    `;
+
+    out.panel.style.display = 'block';
+  });
+</script>
+</body>
+</html>
